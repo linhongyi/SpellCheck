@@ -3,12 +3,12 @@
     <v-container>
 
       <v-textarea label="編輯器" variant="outlined" filled color="blue lighten-4" v-model="wordToCheck"></v-textarea>
+      <p>文章長度: {{ this.wordToCheck.length }} 字元</p>
       <v-btn :loading="loading" @click="checkSpelling()">開始校正</v-btn>
       <v-btn v-if="misspellings.length>0" @click="()=>{dialog=true}">匯出至excel</v-btn>
       <div v-if="showResult" style="margin-top: 10px;">
-          <p>文章長度: {{ this.wordToCheck.length }} 字元</p>
-          <p>花費時間: {{ (this.elapsedTime / 1000).toFixed(2) }} 秒</p>
-          <p>結果:</p>
+
+          <p>結果 - 花費時間: {{ (this.elapsedTime / 1000).toFixed(2) }} 秒</p>
           <v-checkbox v-model="showErrorOnly" label="只顯示錯誤"></v-checkbox>
           <ul>
             <li v-for="word in $_misspellings()" :style="{color: word.key ? 'white' : 'red'}">{{word.key?word.value:word.value+` - `+word.suggest}}</li>
@@ -74,7 +74,7 @@ export default {
         setTimeout(() => {
           let startTime = Date.now()
           if (this.$typo) {
-            const needsCheckWords = this.wordToCheck.split(" ")
+            let needsCheckWords = this.wordToCheck.split(/\s+/)
 
             console.log(`checkSpelling,  length = ${this.wordToCheck.length}`)
 
