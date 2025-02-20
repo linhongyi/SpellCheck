@@ -4,6 +4,12 @@
 
       <v-textarea label="編輯器" variant="outlined" filled color="blue lighten-4" v-model="wordToCheck"></v-textarea>
       <p>文章長度: {{ this.wordToCheck.length }} 字元</p>
+            
+      <v-btn @click="triggerFileInput()">讀檔</v-btn>
+        <!-- 隱藏的文件選擇器 -->
+      <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none" />
+    
+
       <v-btn :loading="loading" @click="checkSpelling()">開始校正</v-btn>
       <v-btn v-if="misspellings.length>0" @click="()=>{dialog=true}">匯出至excel</v-btn>
       <div v-if="showResult" style="margin-top: 10px;">
@@ -63,6 +69,19 @@ export default {
         return this.misspellings
       }
 
+    },
+    triggerFileInput(){
+      this.$refs.fileInput.click(); 
+    },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.wordToCheck = reader.result;
+        };
+        reader.readAsText(file);
+      }
     },
     checkSpelling() {
       try {
