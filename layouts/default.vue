@@ -14,6 +14,7 @@
           :to="item.to"
           router
           exact
+          @click="handleClick(i)"
         >
           <v-list-item-action>
             <v-icon>{{ item.icon }}</v-icon>
@@ -48,7 +49,7 @@
       >
         <v-icon>mdi-minus</v-icon>
       </v-btn>
-      <v-toolbar-title>{{ title }}</v-toolbar-title>
+      <v-toolbar-title>{{ $_c_title }}</v-toolbar-title>
       <v-spacer />
       <v-btn
         icon
@@ -99,20 +100,33 @@ export default {
       items: [
         {
           icon: 'mdi-apps',
-          title: 'Typo',
+          title: 'Typo (client side)',
           to: '/'
         },
         {
           icon: 'mdi-chart-bubble',
-          title: 'Inspire',
+          title: 'hunspell-spellchecker (server side)',
           to: '/inspire'
         }
       ],
       miniVariant: false,
       right: true,
       rightDrawer: false,
-      title: 'Vuetify.js'
+      title: 'Vuetify.js',
+      itemIdx:0
     }
-  }
+  },
+  computed:{
+      $_c_title:{
+        get(){
+          return this.items[this.itemIdx].title
+        }
+      }
+    },
+    methods: {
+      handleClick(idx){
+        this.itemIdx = idx
+      }
+    },
 }
 </script>

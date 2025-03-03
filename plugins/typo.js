@@ -3,7 +3,7 @@ import Typo from "typo-js";
 export default async ({ app }, inject) => {
   const fetchDictionary = async (filename) => {
     const response = await fetch(`/dictionaries/${filename}`);
-    console.log(`response = `,response)
+    // console.log(`response = `,response)
     return response.text();
   };
 

@@ -11,9 +11,12 @@
     "deploy": "npm run generate && gh-pages -d dist"
   },
   "dependencies": {
+    "@nuxtjs/axios": "^5.13.6",
     "core-js": "^3.25.3",
+    "express": "^4.21.2",
     "file-saver": "^2.0.5",
     "gh-pages": "^6.3.0",
+    "hunspell-spellchecker": "^1.0.2",
     "nuxt": "^2.15.8",
     "typo-js": "^1.2.5",
     "vue": "^2.7.10",

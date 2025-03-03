@@ -86,6 +86,10 @@ export default {
     checkSpelling() {
       try {
         console.log(`checkSpelling in`)
+        
+        const basrURL = window.location.origin;
+        const api = basrURL + '/interApi/hello'
+
         this.loading = true
         this.misspellings = []
         this.tableData = []
