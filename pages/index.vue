@@ -2,14 +2,27 @@
   <v-app>
     <v-container>
 
+      <v-menu vrounded offset-y transition="slide-y-transition">
+          <template #activator="{ on: onMenu }">
+            <p>拼字模型選擇</p>
+            <v-btn v-on="{ ...onMenu}" style="margin-bottom: 15px;">
+              {{ spellcheck.modes[spellcheck.idx] }}
+            </v-btn>
+          </template>
+          <v-list>
+              <v-list-item v-for="mode in spellcheck.modes" :key="mode" @click="onClickMode(mode)">{{mode}}</v-list-item>
+          </v-list>
+      </v-menu>
+
+
       <v-textarea label="編輯器" variant="outlined" filled color="blue lighten-4" v-model="wordToCheck"></v-textarea>
       <p>文章長度: {{ this.wordToCheck.length }} 字元</p>
             
       <v-btn @click="triggerFileInput()">讀檔</v-btn>
         <!-- 隱藏的文件選擇器 -->
       <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none" />
-    
 
+ 
       <v-btn :loading="loading" @click="checkSpelling()">開始校正</v-btn>
       <v-btn v-if="misspellings.length>0" @click="()=>{dialog=true}">匯出至excel</v-btn>
       <div v-if="showResult" style="margin-top: 10px;">
@@ -42,6 +55,11 @@
 <script>
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { EVENTBUS_CHANGEMODE } from "../constants/eventBusDefine";
+export const SPELLCHECK_MODE = {
+  typo:0,
+  spellcheck:1,
+}
 
 
 export default {
@@ -55,6 +73,11 @@ export default {
       tableData:[],
       elapsedTime:null,
       showErrorOnly:false,
+      props:false,
+      spellcheck:{
+        idx:SPELLCHECK_MODE.typo,
+        modes:[`TYPO (ClientSide)`,`SpellCheck (ServerSide)`]
+      }
     };
   },
   methods: {
@@ -70,20 +93,7 @@ export default {
       }
 
     },
-    triggerFileInput(){
-      this.$refs.fileInput.click(); 
-    },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          this.wordToCheck = reader.result;
-        };
-        reader.readAsText(file);
-      }
-    },
-    checkSpelling() {
+    $_typoCheck(){
       try {
         console.log(`checkSpelling in`)
         
@@ -99,7 +109,7 @@ export default {
           if (this.$typo) {
             let needsCheckWords = this.wordToCheck.split(/\s+/)
 
-            console.log(`checkSpelling,  length = ${this.wordToCheck.length}`)
+            console.log(`_typoCheck,  length = ${this.wordToCheck.length}`)
 
             for(var idx=0; idx<needsCheckWords.length; idx++){
               let word = this.$_removePunctuation(needsCheckWords[idx])
@@ -128,13 +138,96 @@ export default {
           let endTime = Date.now()
           this.elapsedTime = endTime - startTime
 
-          console.log(`checkSpelling out, elapsedTime =`,this.elapsedTime)
+          console.log(`_typoCheck out, elapsedTime =`,this.elapsedTime)
         }, 1000);
    
       } catch (error) {
-        console.log(`checkSpelling, error = `,error)
+        console.log(`_typoCheck, error = `,error)
       }
-      
+    },
+    async $_spellCheck(){
+      try {
+        console.log(`_spellCheck in`)
+        
+        const basrURL = window.location.origin;
+        const checkWordApi = basrURL + '/interApi/checkWord'
+        const suggestWordApi = basrURL + '/interApi/suggestWord'
+
+        this.loading = true
+        this.misspellings = []
+        this.tableData = []
+
+
+          let startTime = Date.now()
+          if (this.$typo) {
+            let needsCheckWords = this.wordToCheck.split(/\s+/)
+
+            console.log(`_spellCheck,  length = ${this.wordToCheck.length}`)
+
+            for(var idx=0; idx<needsCheckWords.length; idx++){
+              let word = this.$_removePunctuation(needsCheckWords[idx])
+
+              let checkResult = await this.$axios.get(checkWordApi,{params:{word:word}})
+
+              if(checkResult instanceof Error){
+                break
+              }
+              else if(checkResult.data.check==true){
+                this.misspellings.push({key:true,value:word})
+                this.tableData.push({source:word,suggest:""})
+                continue
+              }
+
+              /////////
+
+              let suggestResult = await this.$axios.get(suggestWordApi,{params:{word:word}})
+
+              if(suggestResult instanceof Error){
+                break
+              }
+              else if(suggestResult.data.suggest.length<=0){
+                this.misspellings.push({key:false,value:word,suggest:`NotFound`})
+                this.tableData.push({source:word,suggest:`NotFound`})
+                continue
+              }
+
+              this.misspellings.push({key:false,value:word,suggest:suggestResult.data.suggest})
+              this.tableData.push({source:word,suggest:suggestResult.data.suggest})
+            }
+          }
+          this.showResult = true
+          this.loading = false
+          
+          let endTime = Date.now()
+          this.elapsedTime = endTime - startTime
+
+          console.log(`_spellCheck out, elapsedTime =`,this.elapsedTime)
+        
+   
+      } catch (error) {
+        console.log(`_spellCheck, error = `,error)
+      }
+    },
+    triggerFileInput(){
+      this.$refs.fileInput.click(); 
+    },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.wordToCheck = reader.result;
+        };
+        reader.readAsText(file);
+      }
+    },
+    checkSpelling() {
+      if(this.spellcheck.idx==SPELLCHECK_MODE.typo){
+        this.$_typoCheck()
+      }
+      else{
+        this.$_spellCheck()
+      }
     },
     saveToExcel(allResult){
 
@@ -153,6 +246,14 @@ export default {
         const data = new Blob([excelBuffer], { type: "application/octet-stream" });
         saveAs(data, (allResult==true)?"allResult.xlsx":"errorResult.xlsx");
     },
+    selectItem(item) {
+      alert(`You selected: ${item}`);
+    },
+    onClickMode(mode){
+      this.spellcheck.idx = this.spellcheck.modes.indexOf(mode)
+
+      this.$bus.$emit(EVENTBUS_CHANGEMODE,this.spellcheck.idx)
+    }
   },
 };
 </script>

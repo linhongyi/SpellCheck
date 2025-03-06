@@ -90,6 +90,8 @@
 </template>
 
 <script>
+import { EVENTBUS_CHANGEMODE } from '../constants/eventBusDefine'
+
 export default {
   name: 'DefaultLayout',
   data () {
@@ -123,7 +125,17 @@ export default {
         }
       }
     },
+    mounted() {
+      this.$bus.$on(EVENTBUS_CHANGEMODE, data => { 
+        this.itemIdx = data
+        console.log(`recvMode, itemIdx = ${this.itemIdx}`)
+      })
+    },
+    beforeDestroy() {
+      this.$bus.$off(EVENTBUS_CHANGEMODE)
+    },
     methods: {
+   
       handleClick(idx){
         this.itemIdx = idx
       }
