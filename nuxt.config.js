@@ -27,6 +27,7 @@ export default {
   plugins: [
     "~/plugins/typo.js",
     "~/plugins/eventBus.js",
+    { src: "~/plugins/simpleSpellchecker.js", mode: "server" },
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -62,8 +63,16 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
+    extend(config, { isServer }) {
+      if (!isServer) {
+        config.node = {
+          fs: "empty",
+        };
+      }
+    },
   },
   serverMiddleware: {
     '/api': '~/api'
   },
+  ssr: true,
 }

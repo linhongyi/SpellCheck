@@ -109,6 +109,11 @@ export default {
           icon: 'mdi-chart-bubble',
           title: 'hunspell-spellchecker (server side)',
           to: '/inspire'
+        },
+        {
+          icon: 'mdi-chart-bubble',
+          title: 'simple-spellchecker (server side)',
+          to: '/inspire'
         }
       ],
       miniVariant: false,

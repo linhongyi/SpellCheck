@@ -15,21 +15,6 @@ const DICT = spell.parse({
 
 spell.use(DICT);
 
-export default function checkSpelling(text) {
-
-  return text.split(' ').map(word => ({
-    word,
-    correct: spell.check(word),
-    suggestions: spell.suggest(word)
-  }));
-}
-
-// 示例：
-// console.log(checkSpelling('This is an exmple text.'));
-
-app.get('/hello', (req, res) => {
-  res.json({ message: 'wellcome use spell check' });
-});
 
 app.get('/checkWord', (req, res) => {
   res.json({ check: spell.check(req.query.word) });
@@ -38,5 +23,6 @@ app.get('/checkWord', (req, res) => {
 app.get('/suggestWord', (req, res) => {
   res.json({ suggest: spell.suggest(req.query.word) });
 });
+
 
 module.exports = app

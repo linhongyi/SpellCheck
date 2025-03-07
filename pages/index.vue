@@ -59,6 +59,7 @@ import { EVENTBUS_CHANGEMODE } from "../constants/eventBusDefine";
 export const SPELLCHECK_MODE = {
   typo:0,
   spellcheck:1,
+  simpleSpellcheck:2
 }
 
 
@@ -76,7 +77,7 @@ export default {
       props:false,
       spellcheck:{
         idx:SPELLCHECK_MODE.typo,
-        modes:[`TYPO (ClientSide)`,`SpellCheck (ServerSide)`]
+        modes:[`TYPO (ClientSide)`,`SpellCheck (ServerSide)`,`SimpleSpellCheck (ServerSide)`]
       }
     };
   },
@@ -208,6 +209,71 @@ export default {
         console.log(`_spellCheck, error = `,error)
       }
     },
+    async $_simpleSpellCheck(){
+      try {
+        console.log(`_simpleSpellCheck in`)
+        
+        const basrURL = window.location.origin;
+        const checkWordApi = basrURL + '/interApi/simpleCheckWord'
+        const suggestWordApi = basrURL + '/interApi/simpleSuggestWord'
+
+        this.loading = true
+        this.misspellings = []
+        this.tableData = []
+
+
+          let startTime = Date.now()
+          if (this.$typo) {
+            let needsCheckWords = this.wordToCheck.split(/\s+/)
+
+            console.log(`_simpleSpellCheck,  length = ${this.wordToCheck.length}`)
+
+            for(var idx=0; idx<needsCheckWords.length; idx++){
+              let word = this.$_removePunctuation(needsCheckWords[idx])
+
+              let checkResult = await this.$axios.get(checkWordApi,{params:{word:word}})
+
+              console.log(`checkResult = `,checkResult)
+              if(checkResult instanceof Error){
+                break
+              }
+              else if(checkResult.data.check==true){
+                this.misspellings.push({key:true,value:word})
+                this.tableData.push({source:word,suggest:""})
+                continue
+              }
+
+              /////////
+
+              let suggestResult = await this.$axios.get(suggestWordApi,{params:{word:word}})
+
+              if(suggestResult instanceof Error || suggestResult.data.error!=undefined){
+                console.log(`suggestResult = `,suggestResult)
+                break
+              }
+              else if(suggestResult.data.suggest.length<=0){
+                this.misspellings.push({key:false,value:word,suggest:`NotFound`})
+                this.tableData.push({source:word,suggest:`NotFound`})
+                continue
+              }
+
+              this.misspellings.push({key:false,value:word,suggest:suggestResult.data.suggest})
+              this.tableData.push({source:word,suggest:suggestResult.data.suggest})
+            }
+          }
+          this.showResult = true
+          this.loading = false
+          
+          let endTime = Date.now()
+          this.elapsedTime = endTime - startTime
+
+          console.log(`_simpleSpellCheck out, elapsedTime =`,this.elapsedTime)
+        
+   
+      } catch (error) {
+        console.log(`_simpleSpellCheck, error = `,error)
+      }
+    },
     triggerFileInput(){
       this.$refs.fileInput.click(); 
     },
@@ -225,8 +291,11 @@ export default {
       if(this.spellcheck.idx==SPELLCHECK_MODE.typo){
         this.$_typoCheck()
       }
-      else{
+      else if(this.spellcheck.idx==SPELLCHECK_MODE.spellcheck){
         this.$_spellCheck()
+      }
+      else{
+        this.$_simpleSpellCheck()
       }
     },
     saveToExcel(allResult){

@@ -4,10 +4,12 @@ const express = require('express')
 const app = express()
 
 // // Require API routes
-const SpellcheckerApi = require('./spellchecker')
+const SpellCheckerApi = require('./spellchecker')
+const SimpleSpellCheckApi = require(`./simpleSpellcheckApi`)
 
 // // Import API Routes
-app.use(SpellcheckerApi)
+app.use(SpellCheckerApi)
+app.use(SimpleSpellCheckApi)
 
 // Export express app
 module.exports = {
